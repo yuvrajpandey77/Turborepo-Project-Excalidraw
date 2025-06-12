@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Turborepo starter
 
 This Turborepo starter is maintained by the Turborepo core team.
@@ -82,3 +83,7 @@ Learn more about the power of Turborepo:
 - [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
 - [Configuration Options](https://turborepo.com/docs/reference/configuration)
 - [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+=======
+# Project-Excalidraw-Turborepo
+this is the project that i was working on , it is generally for practicing and revision.
+>>>>>>> 6cc860ffb9cc91203be93c124d708feaefe07b6c
