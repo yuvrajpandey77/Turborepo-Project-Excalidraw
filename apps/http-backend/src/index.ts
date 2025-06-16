@@ -5,7 +5,9 @@ import { CreateUserSchema, SigninSchema, CreateRoomSchema } from "@repo/common/t
 import { middleware } from "./middleware";
 import { prismaClient } from "@repo/db/client";
 const app = express();
-app.post("/signup",async (req, res) => {
+app.use(express.json());
+
+app.post("/signup", async (req, res) => {
   const parsedData = CreateUserSchema.safeParse(req.body);
   if (!parsedData.success) {
     res.json({
@@ -13,59 +15,87 @@ app.post("/signup",async (req, res) => {
     });
     return
   }
-  try{
-    await prismaClient.user.create({
-      data:{
+  try {
+    //encrypt the password
+    const user = await prismaClient.user.create({
+      data: {
         email: parsedData.data?.username,
         password: parsedData.data.password,
         name: parsedData.data.name
       }
     })
-
     res.json({
-      userId: "123"
+      userId: user.id
     });
-
-  }catch(e){
+  } catch (e) {
     res.status(411).json({
       message: "User Already Exist!"
     })
   }
-  
-
 });
 
-app.post("/signin", (req, res) => {
-  res.send("Hello World signin");
-  try {
-    const data = SigninSchema.parse(req.body);
-  } catch (error) {
+app.post("/signin", async (req, res) => {
+
+  const parsedData = SigninSchema.safeParse(req.body);
+  if (!parsedData.success) {
     res.json({
       message: "Incorrect Inputs"
     });
     return
   }
+  // compare the hashed passwords here
+  const user = await prismaClient.user.findFirst({
+    where: {
+      email: parsedData.data.username,
+      password: parsedData.data.password
+    }
+  })
 
 
-  const userId = 1;
+  if (!user) {
+    res.status(403).json({
+      message: "Not Authorised"
+    })
+    return;
+  }
+if(!JWT_SECRET){
+    throw new Error("JWT_SECRET is not defined");
+}
   const token = jwt.sign({
-    userId
-  }, JWT_SECRET);
+    userId: user?.id
+  }, JWT_SECRET );
+
   res.json({ token });
 });
 
-app.post("/room", middleware, (req, res) => {
-  try {
-    const data = CreateRoomSchema.parse(req.body);
-  } catch (error) {
+app.post("/room", middleware, async (req, res) => {
+
+  const parsedData = CreateRoomSchema.safeParse(req.body);
+  if (!parsedData.success) {
     res.json({
       message: "Incorrect Inputs"
     });
-    return
+    return;
   }
-  res.json({
-    roomId: 123
-  })
+  //@ts-ignore
+  const userId = req.userId;
+  try {
+    const room = await prismaClient.room.create({
+      data: {
+        slug: parsedData.data.name,
+        adminId: userId
+      }
+    })
+
+    res.json({
+      roomId: room.id
+    })
+  } catch (e) {
+    res.status(411).json({
+      message:"Room already exists with this name"
+    })
+  }
+
 });
 
 
