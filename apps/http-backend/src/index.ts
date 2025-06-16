@@ -1,25 +1,41 @@
 import express from "express";
 import jwt from "jsonwebtoken";
-import {JWT_SECRET} from  '@repo/backend-common/config'
-import {CreateUserSchema, SigninSchema,CreateRoomSchema} from "@repo/common/types"
+import { JWT_SECRET } from '@repo/backend-common/config'
+import { CreateUserSchema, SigninSchema, CreateRoomSchema } from "@repo/common/types"
 import { middleware } from "./middleware";
+import { prismaClient } from "@repo/db/client";
 const app = express();
-app.post("/signup", (req, res) => {
-  try {
-    const data = CreateUserSchema.parse(req.body);
-    // db call
-    res.json({
-      userId: "123"
-    });
-  } catch (error) {
+app.post("/signup",async (req, res) => {
+  const parsedData = CreateUserSchema.safeParse(req.body);
+  if (!parsedData.success) {
     res.json({
       message: "Incorrect Inputs"
     });
     return
   }
+  try{
+    await prismaClient.user.create({
+      data:{
+        email: parsedData.data?.username,
+        password: parsedData.data.password,
+        name: parsedData.data.name
+      }
+    })
+
+    res.json({
+      userId: "123"
+    });
+
+  }catch(e){
+    res.status(411).json({
+      message: "User Already Exist!"
+    })
+  }
+  
+
 });
 
-app.post("/signin", (req, res) => {  
+app.post("/signin", (req, res) => {
   res.send("Hello World signin");
   try {
     const data = SigninSchema.parse(req.body);
@@ -38,7 +54,7 @@ app.post("/signin", (req, res) => {
   res.json({ token });
 });
 
-app.post("/room",middleware, (req, res) => {
+app.post("/room", middleware, (req, res) => {
   try {
     const data = CreateRoomSchema.parse(req.body);
   } catch (error) {
@@ -48,7 +64,7 @@ app.post("/room",middleware, (req, res) => {
     return
   }
   res.json({
-    roomId:123
+    roomId: 123
   })
 });
 
@@ -58,5 +74,5 @@ app.post("/room",middleware, (req, res) => {
 
 
 app.listen(3001, () => {
-  console.log("Server is running on port 3000");
+  console.log("Server is running on port 3001");
 });
