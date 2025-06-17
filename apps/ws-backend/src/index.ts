@@ -33,13 +33,13 @@ function checkUser(token: string): string | null {
     return null
 }
 
-wss.on("connection", (ws, request) => {
+wss.on("connection", function connection(ws, request) {
     const url = request.url;
     if (!url) {
         return;
     }
     const queryParams = new URLSearchParams(url.split('?')[1]);
-    const token = queryParams.get('token') ?? "";
+    const token = queryParams.get('token') || "";
     const userId = checkUser(token);
 
     if (userId == null) {
@@ -67,6 +67,10 @@ wss.on("connection", (ws, request) => {
             }
             user.rooms = user?.rooms.filter(x => x === parsedData.room)
         }
+        console.log("message received") // changed this when i was facing the error where the ws connection was lost because of false roodid
+
+        console.log(parsedData)
+
 
         if (parsedData.type === "chat") {
             const roomId = parsedData.roomId;
@@ -75,7 +79,7 @@ wss.on("connection", (ws, request) => {
 
             await prismaClient.chat.create({
                 data: {
-                    roomId,
+                    roomId: Number(roomId), // changed this when i was facing the error where the ws connection was lost because of false roomid
                     message,
                     userId
                 }
